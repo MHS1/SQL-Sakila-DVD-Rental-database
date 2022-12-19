@@ -1,0 +1,94 @@
+--Quiry#1
+
+SELECT f.title film_title , 
+       c.name category_name , 
+       COUNT (r.rental_id ) rental_count
+FROM category c
+JOIN film_category fc
+ON c.category_id = fc.category_id
+JOIN film f
+ON f.film_id = fc.film_id
+JOIN inventory i
+ON i.film_id = f.film_id
+JOIN rental r
+ON r.inventory_id = i.inventory_id
+ 	WHERE c.name = 'Animation' OR
+	c.name = 'Children' OR 
+	c.name = 'Classics' OR
+	c.name = 'Comedy' OR
+	c.name = 'Family' OR
+	c.name = 'Music'
+GROUP BY 1,2
+ORDER BY f.title;
+---------------
+
+--Quiry#2
+
+SELECT f.title AS title, 
+       c.name AS name, 
+       f.rental_duration AS rental_duration,
+       NTILE(4) OVER (partition by rental_duration ORDER BY rental_duration) standard_quartile
+FROM category c
+JOIN film_category fc 
+ON c.category_id = fc.category_id
+JOIN film f
+ON fc.film_id = f.film_id
+WHERE c.name = 'Animation' OR
+	c.name = 'Children' OR 
+	c.name = 'Classics' OR
+	c.name = 'Comedy' OR
+	c.name = 'Family' OR
+	c.name = 'Music';
+
+----------------
+--Quiry#3
+
+WITH qu1 AS(
+SELECT  
+   c.name AS name, 
+   f.rental_duration AS rental_duration,
+   NTILE(4) OVER (ORDER BY rental_duration) standard_quartile
+FROM category c
+JOIN film_category fc 
+ON c.category_id = fc.category_id
+JOIN film f
+ON fc.film_id = f.film_id
+WHERE c.name = 'Animation' OR
+	c.name = 'Children' OR 
+	c.name = 'Classics' OR
+	c.name = 'Comedy' OR
+	c.name = 'Family' OR
+	c.name = 'Music')
+    SELECT
+    	name,
+   		standard_quartile,
+        COUNT(standard_quartile)
+        FROM qu1
+	GROUP BY 1,2
+    ORDER BY 1,2;
+
+--------------
+--Quiry#4
+
+WITH qu1 AS(
+SELECT
+  p.customer_id ,
+  CONCAT (c.first_name, ' ', c.last_name) AS fullname,
+  SUM (p.amount) AS pay_amount
+FROM customer c
+JOIN payment p
+ON c.customer_id = p.customer_id
+GROUP BY 1,2
+ORDER BY 3 DESC
+LIMIT 10)
+	SELECT 
+	    DATE_PART('month',pa.payment_date) as pay_mon,
+            q1.fullname,
+            COUNT(*) AS pay_countpermon,
+            SUM (pa.amount) AS pay_amount
+		FROM qu1 AS q1
+		JOIN payment AS pa
+		ON q1.customer_id = pa.customer_id 
+		WHERE DATE_TRUNC ('month',pa.payment_date) BETWEEN '2007-1-1' AND '2007-12-31'
+		GROUP BY 1,2
+		ORDER BY 2;
